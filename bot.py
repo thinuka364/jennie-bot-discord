@@ -1,8 +1,13 @@
 import os
 import re
 import discord
+from keep_alive import keep_alive
 
-TOKEN = os.environ["DISCORD_TOKEN"]  # read token safely from environment variables
+# === Start the keep-alive server ===
+keep_alive()
+
+# === Bot config ===
+TOKEN = os.environ["DISCORD_TOKEN"]
 OWNER_ID = 1401868112793698328
 TARGET_USER_ID = 408785106942164992
 TRIGGER_PHRASE = "please complete this within 10 minutes or it may result in a ban"
@@ -36,14 +41,19 @@ async def on_ready():
 async def on_message(message):
     if message.author == client.user:
         return
-    if message.author.id != TARGET_USER_ID:
-        return
-    normalized_message = normalize_text(message.content)
-    if NORMALIZED_TRIGGER in normalized_message:
-        owner = await client.fetch_user(OWNER_ID)
-        await owner.send(
-            f"⚡ Alert: {message.author} sent the trigger phrase in your server\n"
-            f"Original message:\n{message.content}"
-        )
+
+    # Alert trigger
+    if message.author.id == TARGET_USER_ID:
+        normalized_message = normalize_text(message.content)
+        if NORMALIZED_TRIGGER in normalized_message:
+            owner = await client.fetch_user(OWNER_ID)
+            await owner.send(
+                f"⚡ Alert: {message.author} sent the trigger phrase in your server\n"
+                f"Original message:\n{message.content}"
+            )
+    
+    # Owner command: jennie available
+    if message.author.id == OWNER_ID and message.content.lower().strip() == "jennie available":
+        await message.channel.send("Yes, working hard")
 
 client.run(TOKEN)
